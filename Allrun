@@ -1,0 +1,41 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+
+#------------------------------------------------------------------------------
+# Polyline extrusion notes (June 2026)
+#
+# Key findings:
+#
+# - PHIDL spline points can be used directly.
+# - Curved paths require vertex / arc-point alternation.
+# - Use original spline points only.
+# - Profile orientation is critical.
+#
+# Experimental observations:
+#
+# - Tutorial profile + serpentine path -> Mesh OK
+# - outlet.vtp + serpentine path       -> Mesh OK
+# - inlet.vtp  + serpentine path       -> negative volumes / invalid mesh
+#
+# Lessons learned:
+#
+# - Mesh may look correct in ParaView and still fail checkMesh.
+# - Always run checkMesh.
+# - Generate extrudeMeshDict using makeExtrudeMeshDict.py.
+# - Then run Allrun.
+#
+#------------------------------------------------------------------------------
+
+mkdir -p constant/triSurface
+
+blockMesh
+foamToVTK
+
+cp VTK/polyline_0/boundary/outlet.vtp \
+   constant/triSurface/
+
+USE_ARC=true runApplication -s arc extrudeMesh
+
+mkdir -p 1
+runApplication -s arc checkMesh -writeAllFields -time 1
