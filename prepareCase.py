@@ -11,8 +11,6 @@ from pathlib import Path
 
 CASE_DIR = Path.cwd()
 
-PROFILE_VTP = CASE_DIR / "VTK/polyline_0/boundary/outlet.vtp"
-
 PROFILE_VTK = CASE_DIR / "constant/triSurface/outlet.vtk"
 
 BC_TEMPLATE_DIR = CASE_DIR / "templates/0"
@@ -22,18 +20,50 @@ MAKE_DICT_SCRIPT = CASE_DIR / "utils/makeExtrudeMeshDict.py"
 VTP2VTK_SCRIPT = CASE_DIR / "utils/vtp2vtk.py"
 
 GEOMETRY_FILE = CASE_DIR / "geometry/puntosSplineReduced.csv"
+
+
 # ------------------------------------------------------------------
 # Utilities
 # ------------------------------------------------------------------
 
-def run(cmd):
+def run(cmd, logfile=None):
 
     print("\n>>>", " ".join(cmd))
 
-    subprocess.run(
-        cmd,
-        check=True
+    if logfile:
+
+        with open(logfile, "w") as f:
+
+            subprocess.run(
+                cmd,
+                stdout=f,
+                stderr=subprocess.STDOUT,
+                check=True
+            )
+
+    else:
+
+        subprocess.run(
+            cmd,
+            check=True
+        )
+
+def find_outlet_vtp():
+
+    files = list(
+        CASE_DIR.glob(
+            "VTK/*/boundary/outlet.vtp"
+        )
     )
+
+    if not files:
+
+        raise FileNotFoundError(
+            "No outlet.vtp found"
+        )
+
+    return files[0]
+
 
 # ------------------------------------------------------------------
 # Clean case
@@ -45,8 +75,9 @@ def clean_case():
 
         run(["./Allclean"])
 
+
 # ------------------------------------------------------------------
-# 1. Generate VTK profile using blockMesh -> foamToVTK
+# Generate VTK profile
 # ------------------------------------------------------------------
 
 def generate_profile():
@@ -54,44 +85,39 @@ def generate_profile():
     run(["blockMesh"])
 
     run([
-
         "foamToVTK",
-
         "-ascii"
-
     ])
 
 
 # ------------------------------------------------------------------
-# 1. Convert VTP -> VTK 
+# Convert VTP -> VTK
 # ------------------------------------------------------------------
-
 
 def convert_surface():
 
+    profile_vtp = find_outlet_vtp()
+
     PROFILE_VTK.parent.mkdir(
-
         parents=True,
-
         exist_ok=True
-
     )
 
     run([
         "python3",
         str(VTP2VTK_SCRIPT),
-        str(PROFILE_VTP),
+        str(profile_vtp),
         str(PROFILE_VTK)
     ])
 
+
 # ------------------------------------------------------------------
-# 2. Generate extrudeMeshDict
-#  python utils/makeExtrudeMeshDict.py geometry/puntosSplineReduced.csv system/extrudeMeshDict  --tolerance 1.0e-2 --mergeTol 1.0e-2 --layers 500 --surface outlet.vtk --npoints 300
+# Generate extrudeMeshDict
 # ------------------------------------------------------------------
 
 def generate_dict():
 
-     run([
+    run([
 
         "python3",
 
@@ -109,32 +135,66 @@ def generate_dict():
 
         "--surface", "outlet.vtk",
 
-        "--npoints", "300"
+        "--npoints", "300"#300
 
     ])
 
 
 # ------------------------------------------------------------------
-# 3. Run extrudeMesh
+# Run extrudeMesh
 # ------------------------------------------------------------------
 
 def run_extrude():
 
-        #run([
+    run(
 
-        #"bash",
+        ["extrudeMesh"],
 
-        #"-c",
+        logfile="log.extrudeMesh.arc"
 
-        #"USE_ARC=true arc extrudeMesh"
-        run(["./Allrun"
+    )
 
 
-    ])
+def run_checkmesh():
 
+    run(
+
+        [
+
+            "checkMesh",
+
+            "-writeAllFields",
+
+            "-time",
+
+            "1"
+
+        ],
+
+        logfile="log.checkMesh.arc"
+
+    )
 
 # ------------------------------------------------------------------
-# 4. Rename patches
+# Create_initial_conditions
+# ------------------------------------------------------------------
+
+def create_initial_conditions():
+
+    if Path("0").exists():
+
+        shutil.rmtree("0")
+
+    shutil.copytree(
+
+        "0.orig",
+
+        "0"
+
+    )
+
+# ------------------------------------------------------------------
+# Rename patches
 # ------------------------------------------------------------------
 
 def rename_patches():
@@ -167,44 +227,25 @@ def rename_patches():
 
 
 # ------------------------------------------------------------------
-# 5. Copy BC templates
-# ------------------------------------------------------------------
-
-def copy_templates():
-
-    dst = CASE_DIR / "0"
-
-    if dst.exists():
-
-        shutil.rmtree(dst)
-
-    shutil.copytree(
-        BC_TEMPLATE_DIR,
-        dst
-    )
-
-    print("BC templates copied.")
-
-
-# ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
 
 def main():
 
     clean_case()
-    
+
     generate_profile()
 
     convert_surface()
-    
+
     generate_dict()
 
     run_extrude()
 
-    rename_patches()
+    run_checkmesh()
 
-    copy_templates()
+    rename_patches()
+    create_initial_conditions()
 
     print("\nCase ready.")
 
