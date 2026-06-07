@@ -11,12 +11,16 @@ cd "${0%/*}" || exit                                # Run from this directory
 # - Curved paths require vertex / arc-point alternation.
 # - Use original spline points only.
 # - Profile orientation is critical.
+# - Convert vtp to vtk using paraview save as ascii
+# - Known issue: foamToVTK exports .vtp surfaces.
+#  extrudeMesh requires legacy .vtk.
+#  A conversion step is currently required.
 #
 # Experimental observations:
 #
 # - Tutorial profile + serpentine path -> Mesh OK
-# - outlet.vtp + serpentine path       -> Mesh OK
-# - inlet.vtp  + serpentine path       -> negative volumes / invalid mesh
+# - outlet.vtk + serpentine path       -> Mesh OK
+# - inlet.vtk  + serpentine path       -> negative volumes / invalid mesh
 #
 # Lessons learned:
 #
@@ -30,7 +34,7 @@ cd "${0%/*}" || exit                                # Run from this directory
 mkdir -p constant/triSurface
 
 blockMesh
-foamToVTK
+foamToVTK -ascii
 
 cp VTK/polyline_0/boundary/outlet.vtp \
    constant/triSurface/
