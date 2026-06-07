@@ -340,12 +340,12 @@ edges
 );
 
 
-    toleranceCheck  1.0;
+    toleranceCheck  0.01;
 }
 
 mergeFaces false;
 
-mergeTol 1.0;
+mergeTol 0.01;
 
 
 // ************************************************************************* //

@@ -36,8 +36,8 @@ mkdir -p constant/triSurface
 blockMesh
 foamToVTK -ascii
 
-cp VTK/polyline_0/boundary/outlet.vtp \
-   constant/triSurface/
+python3 utils/vtp2vtk.py VTK/polyline_0/boundary/outlet.vtp constant/triSurface/outlet.vtk
+
 
 USE_ARC=true runApplication -s arc extrudeMesh
 

@@ -22,15 +22,15 @@ internalField   uniform 3;
 
 boundaryField
 {
-    inlet
+    sides
     {
         type            zeroGradient;
     }
-    outlet
+    originalPatch
     {
         type            zeroGradient;
     }
-    walls
+    otherSide
     {
         type            zeroGradient;
     }

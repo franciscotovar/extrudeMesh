@@ -18,24 +18,24 @@ FoamFile
 
 3
 (
+    walls
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          30000;
+        startFace       284800;
+    }
     inlet
     {
         type            patch;
         nFaces          200;
-        startFace       11200;
+        startFace       314800;
     }
     outlet
     {
         type            patch;
         nFaces          200;
-        startFace       11400;
-    }
-    walls
-    {
-        type            wall;
-        inGroups        1(wall);
-        nFaces          1200;
-        startFace       11600;
+        startFace       315000;
     }
 )
 

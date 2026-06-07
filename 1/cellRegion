@@ -22,17 +22,17 @@ internalField   uniform 0;
 
 boundaryField
 {
-    inlet
+    sides
     {
         type            calculated;
         value           uniform 0;
     }
-    outlet
+    originalPatch
     {
         type            calculated;
         value           uniform 0;
     }
-    walls
+    otherSide
     {
         type            calculated;
         value           uniform 0;
